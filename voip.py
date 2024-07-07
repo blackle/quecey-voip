@@ -6,16 +6,31 @@ import struct
 import wave
 import asyncio
 
+class RecordController:
+	def __init__(self):
+		self.stopped = False
+
+	def stop(self):
+		self.stopped = True
+
+def packedToFloat(a, b):
+	x = a << 8 | b
+	x = struct.unpack('<h', struct.pack('<H', x))[0]
+	x /= 32767
+	return x
+
+def floatToPacked(x):
+	x = int(x*32767)
+	x = struct.unpack('<H', struct.pack('<h', x))[0]
+	return (x & 0xff, (x & 0xff00) >> 8)
+
 def loadWAVtoPCM(filename):
 	pcm = []
 	with wave.open(filename, mode='rb') as w:
 		data = w.readframes(w.getnframes())
 		for i in range(len(data)):
 			if i % 2 == 1:
-				x = data[i] << 8 | data[i-1]
-				x = struct.unpack('<h', struct.pack('<H', x))[0]
-				x /= 32767
-				pcm.append(x)
+				pcm.append(packedToFloat(data[i], data[i-1]))
 	return pcm
 
 class AudioPlaybackTask:
@@ -51,22 +66,37 @@ class AudioCustomTask:
 		self.t += 1
 		return x
 
+class AudioRecordTask:
+	def __init__(self, controller, future, maxlen):
+		self.controller = controller
+		self.future = future
+		self.maxlen = maxlen
+		self.pcm = []
+
+	def addSample(self, x):
+		if self.future.done():
+			return
+		self.pcm.append(x)
+		if (self.maxlen and len(self.pcm) >= self.maxlen) or (self.controller and self.controller.stopped):
+			self.future.set_result(self.pcm)
+
 class AudioMediaPort(pj.AudioMediaPort):
 	def __init__(self, fmt):
 		pj.AudioMediaPort.__init__(self)
 		self.time = 0
 		self.samplesPerFrame = (fmt.clockRate * fmt.frameTimeUsec) // 1000000
 		self.clockRate = fmt.clockRate
-		self.tasks = []
+		self.playTasks = []
+		self.recordTasks = []
 
 	def playPCM(self, pcm):
 		future = asyncio.Future()
-		self.tasks.append(AudioPlaybackTask(future, pcm))
+		self.playTasks.append(AudioPlaybackTask(future, pcm))
 		return future
 
 	def playCustom(self, func):
 		future = asyncio.Future()
-		self.tasks.append(AudioCustomTask(future, func, self.clockRate))
+		self.playTasks.append(AudioCustomTask(future, func, self.clockRate))
 		return future
 
 	def playTone(self, pitch, duration):
@@ -75,53 +105,47 @@ class AudioMediaPort(pj.AudioMediaPort):
 				return None
 			return math.sin(t * pitch * math.pi * 2)
 		future = asyncio.Future()
-		self.tasks.append(AudioCustomTask(future, toneFunc, self.clockRate))
+		self.playTasks.append(AudioCustomTask(future, toneFunc, self.clockRate))
+		return future
+
+	def recordPCM(self, controller=None, maxlen=None):
+		if controller is None and maxlen is None:
+			raise Exception("recordPCM called with no way to stop recording")
+		future = asyncio.Future()
+		self.recordTasks.append(AudioRecordTask(controller, future, maxlen))
 		return future
 
 	def onFrameRequested(self, frame):
 		frame.type = pj.PJMEDIA_TYPE_AUDIO
 		for i in range(self.samplesPerFrame):
 			x = 0
-			for task in self.tasks:
+			for task in self.playTasks:
 				x += task.getSample()
 
-			x = int(min(max(-1,x),1)*32767)
+			x = min(max(-1,x),1)
 
-			# self.time += 1
-			# t = self.time / self.clockRate
-			# x = int(math.sin(t * 440 * math.pi * 2)*10000)
+			low, hi = floatToPacked(x)
+			frame.buf.append(low)
+			frame.buf.append(hi)
 
-			x = struct.unpack('<H', struct.pack('<h', x))[0]
-			frame.buf.append(x & 0xff)
-			frame.buf.append((x & 0xff00) >> 8)
-
-		self.tasks = [task for task in self.tasks if not task.future.done()]
+		self.playTasks = [task for task in self.playTasks if not task.future.done()]
 
 	def onFrameReceived(self, frame):
-		pass
-		# frame_ = pj.ByteVector()
-		# for i in range(frame.buf.size()):
-		# 	frame_.append(frame.buf[i])
-		# self.frames.append(frame_)
+		if len(self.recordTasks) == 0:
+			return
+
+		for i in range(frame.buf.size()):
+			if i % 2 == 1:
+				x = packedToFloat(frame.buf[i], frame.buf[i-1])
+				for task in self.recordTasks:
+					task.addSample(x)
+
+		self.recordTasks = [task for task in self.recordTasks if not task.future.done()]
 
 def genAudio(t, delta):
 	if t > .1:
 		return None
 	return math.sin(t * 440 * math.pi * 2)
-
-async def fish_call(call):
-	await asyncio.sleep(0.1)
-	pcm = loadWAVtoPCM("fish_not_ready.wav")
-	await call.playPCM(pcm)
-	await asyncio.sleep(0.1)
-	await call.playTone(1500,.4)
-	try:
-		dtmf = await asyncio.wait_for(call.getDTMF(n=4), 15)
-		if dtmf == "1312":
-			await call.playTone(1900,.4)
-			await asyncio.sleep(1)
-	except TimeoutError:
-		print("timeout")
 
 class Call(pj.Call):
 	def __init__(self, acc, call_id=pj.PJSUA_INVALID_ID):
@@ -190,6 +214,7 @@ class CallInterface:
 	playPCM = delegate_method("port", "playPCM")
 	playTone = delegate_method("port", "playTone")
 	playCustom = delegate_method("port", "playCustom")
+	recordPCM = delegate_method("port", "recordPCM")
 
 
 class Account(pj.Account):
@@ -252,6 +277,7 @@ def runVoipClient(taskFunction):
 						try:
 							await taskFunction(iface)
 						except Exception as e:
+							print("Unhandled exception in call handler:", e)
 							pass
 						call_prm = pj.CallOpParam()
 						call_prm.statusCode = 200
@@ -265,5 +291,13 @@ def runVoipClient(taskFunction):
 	# Destroy the library
 	ep.libDestroy()
 
+async def sampleCallFunction(call):
+	await call.playTone(420, .5)
+	await asyncio.sleep(.5)
+	await call.playTone(560, .5)
+	await asyncio.sleep(.5)
+	await call.playTone(650, .5)
+	await asyncio.sleep(.5)
+
 if __name__ == "__main__":
-	runVoipClient(fish_call)
+	runVoipClient(sampleCallFunction)

@@ -167,7 +167,7 @@ class Call(pj.Call):
 	def __init__(self, acc, call_id=pj.PJSUA_INVALID_ID):
 		pj.Call.__init__(self, acc, call_id)
 		self.acc = acc
-		self.connected = False
+
 		fmt = pj.MediaFormatAudio()
 		fmt.type = pj.PJMEDIA_TYPE_AUDIO
 		fmt.clockRate = 16000
@@ -182,10 +182,10 @@ class Call(pj.Call):
 
 	def onCallState(self, prm):
 		ci = self.getInfo()
-		self.connected = ci.state == pj.PJSIP_INV_STATE_CONFIRMED
 		if ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
-			self.task.cancel()
-			self.task = None
+			if self.task is not None:
+				self.task.cancel()
+				self.task = None
 		self.acc.updateCallState(self, ci)
 
 	def onCallMediaState(self, prm):
@@ -194,8 +194,6 @@ class Call(pj.Call):
 			if mi.type == pj.PJMEDIA_TYPE_AUDIO and mi.status == pj.PJSUA_CALL_MEDIA_ACTIVE:
 				m = self.getMedia(mi.index)
 				am = pj.AudioMedia.typecastFromMedia(m)
-				# self.acc.ep.audDevManager().getCaptureDevMedia().startTransmit(am)
-				# am.startTransmit(self.acc.ep.audDevManager().getPlaybackDevMedia())
 				self.port.startTransmit(am)
 				am.startTransmit(self.port)
 
@@ -241,7 +239,7 @@ class Account(pj.Account):
 		self.ep = ep
 
 	def onIncomingCall(self, prm):
-		print("incoming call")
+		print("Incoming call!")
 
 		call = Call(self, call_id=prm.callId)
 
@@ -255,6 +253,7 @@ class Account(pj.Account):
 	def updateCallState(self, call, ci):
 		if ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
 			self.calls.remove(call)
+			call.__disown__()
 
 def runVoipClient(taskFunction):
 	ep_cfg = pj.EpConfig()
@@ -297,17 +296,20 @@ def runVoipClient(taskFunction):
 							print("Unhandled exception in call handler:", e)
 							pass
 						call.task = None
-						call_prm = pj.CallOpParam()
-						call_prm.statusCode = 200
-						call.hangup(call_prm)
+						if call.isActive():
+							call_prm = pj.CallOpParam()
+							call_prm.statusCode = 200
+							call.hangup(call_prm)
 					call.task = loop.create_task(call_func(call, call.port))
 		except KeyboardInterrupt:
 			break
 
 	loop.close()
+	acc = None
 
 	# Destroy the library
 	ep.libDestroy()
+	ep = None
 
 async def sampleCallFunction(call):
 	await call.playTone(420, .5)

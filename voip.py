@@ -248,8 +248,6 @@ class Account(pj.Account):
 		call.answer(call_prm)
 		self.calls.add(call)
 
-		# call.hangup(call_prm)
-
 	def updateCallState(self, call, ci):
 		if ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
 			self.calls.remove(call)
@@ -269,13 +267,13 @@ def runVoipClient(taskFunction):
 	# Create SIP transport. Error handling sample is shown
 	sipTpConfig = pj.TransportConfig();
 	sipTpConfig.port = 5061;
-	ep.transportCreate(pj.PJSIP_TRANSPORT_UDP, sipTpConfig);
+	ep.transportCreate(pj.PJSIP_TRANSPORT_TCP, sipTpConfig);
 	# Start the library
 	ep.libStart();
 
 	acfg = pj.AccountConfig();
 	acfg.idUri = "sip:blackle@localhost";
-	acfg.regConfig.registrarUri = "sip:localhost";
+	acfg.regConfig.registrarUri = "sip:localhost;transport=tcp";
 	cred = pj.AuthCredInfo("digest", "*", "blackle", 0, "123456");
 	acfg.sipConfig.authCreds.append(cred);
 	# Create the account

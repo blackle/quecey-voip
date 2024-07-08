@@ -80,6 +80,17 @@ class AudioRecordTask:
 		if (self.maxlen and len(self.pcm) >= self.maxlen) or (self.controller and self.controller.stopped):
 			self.future.set_result(self.pcm)
 
+class AudioRecordCustomTask:
+	def __init__(self, future, func):
+		self.func = func
+		self.future = future
+
+	def addSample(self, x):
+		if self.future.done():
+			return
+		if self.func(x) == False:
+			self.future.set_result(True)
+
 class AudioMediaPort(pj.AudioMediaPort):
 	def __init__(self, fmt):
 		pj.AudioMediaPort.__init__(self)
@@ -113,6 +124,11 @@ class AudioMediaPort(pj.AudioMediaPort):
 			raise Exception("recordPCM called with no way to stop recording")
 		future = asyncio.Future()
 		self.recordTasks.append(AudioRecordTask(controller, future, maxlen))
+		return future
+
+	def recordCustom(self, func):
+		future = asyncio.Future()
+		self.recordTasks.append(AudioRecordCustomTask(future, func))
 		return future
 
 	def onFrameRequested(self, frame):
@@ -215,6 +231,7 @@ class CallInterface:
 	playTone = delegate_method("port", "playTone")
 	playCustom = delegate_method("port", "playCustom")
 	recordPCM = delegate_method("port", "recordPCM")
+	recordCustom = delegate_method("port", "recordCustom")
 
 
 class Account(pj.Account):
@@ -279,6 +296,7 @@ def runVoipClient(taskFunction):
 						except Exception as e:
 							print("Unhandled exception in call handler:", e)
 							pass
+						call.task = None
 						call_prm = pj.CallOpParam()
 						call_prm.statusCode = 200
 						call.hangup(call_prm)

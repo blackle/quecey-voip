@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
+import pickle
 from voip import loadWAVtoPCM, runVoipClient, RecordController
 from datetime import datetime
 
@@ -12,15 +13,22 @@ def normalizePCM(pcm):
 	except:
 		return []
 
-phone_tree = {
-	"s": loadWAVtoPCM("phone_tree_trailhead.wav")
-}
+try:
+	with open("phone_tree.pkl", 'rb') as file:
+		phone_tree = pickle.load(file)
+except (FileNotFoundError, pickle.UnpicklingError) as e:
+	print("couldn't load saved tree:", e)
+	phone_tree = {"s": loadWAVtoPCM("phone_tree_trailhead.wav")}
+
+def save_phone_tree(phone_tree):
+	with open("phone_tree.pkl", 'wb') as file:
+		pickle.dump(phone_tree, file)
 
 answer_missing = loadWAVtoPCM("phone_tree_answer_missing.wav")
 author_instructions = loadWAVtoPCM("phone_tree_author_instructions.wav")
 author_finalize = loadWAVtoPCM("phone_tree_author_finalize.wav")
 
-async def fishCallHandler(call):
+async def phoneTreeHandler(call):
 	global phone_tree
 	tree_pos = "s"
 	playback = None
@@ -69,37 +77,7 @@ async def fishCallHandler(call):
 					dtmf = await call.getDTMF()
 					if dtmf == '1':
 						phone_tree[tree_pos] = pcm
-
-
-
-
-
-	# now = datetime.now()
-	# await asyncio.sleep(0.1)
-	# if now.strftime("%I:%M") != "11:05":
-	# 	await call.playTone(800,.5)
-	# 	controller = RecordController()
-	# 	record = call.recordPCM(controller=controller)
-	# 	try:
-	# 		dtmf = await asyncio.wait_for(call.getDTMF(), 15)
-	# 	except:
-	# 		pass
-	# 	controller.stop()
-	# 	pcm = normalizePCM(await record)
-	# 	await call.playTone(800,.5)
-	# 	await call.playPCM(pcm)
-	# else:
-	# 	pcm = loadWAVtoPCM("fish_not_ready.wav")
-	# 	await call.playPCM(pcm)
-	# await asyncio.sleep(1)
-	# try:
-	# 	dtmf = await asyncio.wait_for(call.getDTMF(n=4), 15)
-	# 	message.cancel()
-	# 	if dtmf == "1312":
-	# 		await call.playTone(1900,.4)
-	# 		await asyncio.sleep(1)
-	# except TimeoutError:
-	# 	print("timeout")
+						save_phone_tree(phone_tree)
 
 if __name__ == "__main__":
-	runVoipClient(fishCallHandler)
+	runVoipClient(phoneTreeHandler)

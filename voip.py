@@ -253,6 +253,7 @@ class Account(pj.Account):
 	def updateCallState(self, call, ci):
 		if ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
 			self.calls.remove(call)
+			print("Call removed.")
 			call.__disown__()
 
 def runVoipClient(taskFunction):
@@ -293,6 +294,8 @@ def runVoipClient(taskFunction):
 						iface = CallInterface(call, call.port)
 						try:
 							await taskFunction(iface)
+						except asyncio.exceptions.CancelledError as e:
+							return
 						except Exception as e:
 							print("Unhandled exception in call handler:", e)
 							pass
@@ -303,14 +306,17 @@ def runVoipClient(taskFunction):
 							call.hangup(call_prm)
 					call.task = loop.create_task(call_func(call, call.port))
 		except KeyboardInterrupt:
-			calls = list(acc.calls)
-			for call in calls:
-				if call.isActive():
-					call_prm = pj.CallOpParam()
-					call_prm.statusCode = 200
-					call.hangup(call_prm)
-
 			break
+
+	calls = list(acc.calls)
+	for call in calls:
+		if call.isActive():
+			call_prm = pj.CallOpParam()
+			call_prm.statusCode = 200
+			call.hangup(call_prm)
+	calls = None
+
+	loop.run_until_complete(asyncio.gather(*asyncio.all_tasks(loop)))
 
 	loop.close()
 	acc = None

@@ -17,7 +17,7 @@ async def echoHandler(call):
 	def sampleOutput(t, delta):
 		if stop:
 			return None
-		if sampleQueue.qsize() < 1600:
+		if sampleQueue.qsize() < 160:
 			return 0
 		return sampleQueue.get()
 	call.recordCustom(sampleInput)

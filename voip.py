@@ -286,7 +286,8 @@ def runVoipClient(taskFunction):
 	while True:
 		try:
 			loop.run_until_complete(asyncio.sleep(0.1))
-			for call in acc.calls:
+			calls = list(acc.calls)
+			for call in calls:
 				if call.task is None:
 					async def call_func(call, port):
 						iface = CallInterface(call, call.port)
@@ -302,6 +303,13 @@ def runVoipClient(taskFunction):
 							call.hangup(call_prm)
 					call.task = loop.create_task(call_func(call, call.port))
 		except KeyboardInterrupt:
+			calls = list(acc.calls)
+			for call in calls:
+				if call.isActive():
+					call_prm = pj.CallOpParam()
+					call_prm.statusCode = 200
+					call.hangup(call_prm)
+
 			break
 
 	loop.close()

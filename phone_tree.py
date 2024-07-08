@@ -1,32 +1,23 @@
 #!/usr/bin/env python3
 import asyncio
 import pickle
-from voip import loadWAVtoPCM, runVoipClient, RecordController
+from voip import loadWAVtoPCM, runVoipClient, RecordController, normalizePCM
 from datetime import datetime
-
-def normalizePCM(pcm):
-	try:
-		start = next(i for i, x in enumerate(pcm) if abs(x) > .005)
-		end = next(len(pcm)-i-1 for i, x in enumerate(pcm[::-1]) if abs(x) > .005)
-		m = max(abs(x) for x in pcm)
-		return [x / m for x in pcm[start:end]]
-	except:
-		return []
 
 try:
 	with open("phone_tree.pkl", 'rb') as file:
 		phone_tree = pickle.load(file)
 except (FileNotFoundError, pickle.UnpicklingError) as e:
 	print("couldn't load saved tree:", e)
-	phone_tree = {"s": loadWAVtoPCM("phone_tree_trailhead.wav")}
+	phone_tree = {"s": loadWAVtoPCM("assets/phone_tree_trailhead.wav")}
 
 def save_phone_tree(phone_tree):
 	with open("phone_tree.pkl", 'wb') as file:
 		pickle.dump(phone_tree, file)
 
-answer_missing = loadWAVtoPCM("phone_tree_answer_missing.wav")
-author_instructions = loadWAVtoPCM("phone_tree_author_instructions.wav")
-author_finalize = loadWAVtoPCM("phone_tree_author_finalize.wav")
+answer_missing = loadWAVtoPCM("assets/phone_tree_answer_missing.wav")
+author_instructions = loadWAVtoPCM("assets/phone_tree_author_instructions.wav")
+author_finalize = loadWAVtoPCM("assets/phone_tree_author_finalize.wav")
 
 async def phoneTreeHandler(call):
 	global phone_tree

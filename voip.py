@@ -14,6 +14,16 @@ class RecordController:
 	def stop(self):
 		self.stopped = True
 
+def normalizePCM(pcm):
+	"""Helper function to normalize volume and trim silence on either end"""
+	try:
+		start = next(i for i, x in enumerate(pcm) if abs(x) > .005)
+		end = next(len(pcm)-i-1 for i, x in enumerate(pcm[::-1]) if abs(x) > .005)
+		m = max(abs(x) for x in pcm)
+		return [x / m for x in pcm[start:end]]
+	except:
+		return []
+
 def packedToFloat(a, b):
 	x = a << 8 | b
 	x = struct.unpack('<h', struct.pack('<H', x))[0]
@@ -50,7 +60,7 @@ class AudioPlaybackTask:
 		self.t += 1
 		return x
 
-class AudioCustomTask:
+class AudioPlaybackCustomTask:
 	def __init__(self, future, func, clockRate):
 		self.future = future
 		self.t = 0
@@ -108,7 +118,7 @@ class AudioMediaPort(pj.AudioMediaPort):
 
 	def playCustom(self, func):
 		future = asyncio.Future()
-		self.playTasks.append(AudioCustomTask(future, func, self.clockRate))
+		self.playTasks.append(AudioPlaybackCustomTask(future, func, self.clockRate))
 		return future
 
 	def playTone(self, pitch, duration):
@@ -117,7 +127,7 @@ class AudioMediaPort(pj.AudioMediaPort):
 				return None
 			return math.sin(t * pitch * math.pi * 2)
 		future = asyncio.Future()
-		self.playTasks.append(AudioCustomTask(future, toneFunc, self.clockRate))
+		self.playTasks.append(AudioPlaybackCustomTask(future, toneFunc, self.clockRate))
 		return future
 
 	def recordPCM(self, controller=None, maxlen=None):

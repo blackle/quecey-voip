@@ -2,8 +2,7 @@
 import asyncio
 import pickle
 import queue
-from voip import loadWAVtoPCM, runVoipClient, RecordController
-from datetime import datetime
+from voip import runVoipClient
 
 async def echoHandler(call):
 	sampleQueue = queue.Queue(maxsize=16000*2)

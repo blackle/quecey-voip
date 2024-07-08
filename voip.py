@@ -5,6 +5,7 @@ import math
 import struct
 import wave
 import asyncio
+import os
 
 class RecordController:
 	def __init__(self):
@@ -254,31 +255,38 @@ class Account(pj.Account):
 			print("Call removed.")
 			call.__disown__()
 
-def runVoipClient(taskFunction):
+def runVoipClient(taskFunction, username=None, password=None, port=None, registrarUri=None, idUri=None):
+	if username is None: username = os.environ["QUECEY_VOIP_USERNAME"]
+	if password is None: password = os.environ["QUECEY_VOIP_PASSWORD"]
+	if port is None: port = int(os.environ["QUECEY_VOIP_PORT"])
+	if registrarUri is None: registrarUri = os.environ["QUECEY_VOIP_REGISTRAR_URI"]
+	if idUri is None: idUri = os.environ["QUECEY_VOIP_ID_URI"]
+
 	ep_cfg = pj.EpConfig()
 
-	ep_cfg.logConfig.level = 1
-	ep_cfg.logConfig.consoleLevel = 1
+	ep_cfg.logConfig.level = 0
+	ep_cfg.logConfig.consoleLevel = 0
+	ep_cfg.logConfig.msgLogging = False
 
 	ep = pj.Endpoint()
 	ep.libCreate()
 	ep.libInit(ep_cfg)
 
 	# Create SIP transport. Error handling sample is shown
-	sipTpConfig = pj.TransportConfig();
-	sipTpConfig.port = 5061;
-	ep.transportCreate(pj.PJSIP_TRANSPORT_TCP, sipTpConfig);
+	sipTpConfig = pj.TransportConfig()
+	sipTpConfig.port = port
+	ep.transportCreate(pj.PJSIP_TRANSPORT_TCP, sipTpConfig)
 	# Start the library
-	ep.libStart();
+	ep.libStart()
 
-	acfg = pj.AccountConfig();
-	acfg.idUri = "sip:blackle@localhost";
-	acfg.regConfig.registrarUri = "sip:localhost;transport=tcp";
-	cred = pj.AuthCredInfo("digest", "*", "blackle", 0, "123456");
-	acfg.sipConfig.authCreds.append(cred);
+	acfg = pj.AccountConfig()
+	acfg.idUri = idUri
+	acfg.regConfig.registrarUri = registrarUri
+	cred = pj.AuthCredInfo("digest", "*", username, 0, password)
+	acfg.sipConfig.authCreds.append(cred)
 	# Create the account
-	acc = Account(ep);
-	acc.create(acfg);
+	acc = Account(ep)
+	acc.create(acfg)
 	# Here we don't have anything else to do..
 	loop = asyncio.get_event_loop()
 

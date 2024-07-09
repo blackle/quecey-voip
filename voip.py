@@ -285,7 +285,7 @@ def runVoipClient(taskFunction, username=None, password=None, port=None, registr
 	# Create SIP transport. Error handling sample is shown
 	sipTpConfig = pj.TransportConfig()
 	sipTpConfig.port = port
-	ep.transportCreate(pj.PJSIP_TRANSPORT_TCP, sipTpConfig)
+	ep.transportCreate(pj.PJSIP_TRANSPORT_UDP, sipTpConfig)
 	# Start the library
 	ep.libStart()
 

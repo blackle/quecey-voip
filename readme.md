@@ -67,7 +67,7 @@ sip.conf
 context=public                  ; Default context for incoming calls. Defaults to 'default'
 allowoverlap=no                 ; Disable overlap dialing support. (Default is yes)
 udpbindaddr=0.0.0.0             ; IP address to bind UDP listen socket to (0.0.0.0 binds to all)
-tcpenable=true                  ; Enable server for incoming TCP connections (default is no)
+tcpenable=false                 ; Enable server for incoming TCP connections (default is no)
 tcpbindaddr=0.0.0.0             ; IP address for TCP server to bind to (0.0.0.0 binds to all interfaces)
 transport=tcp                   ; Set the default transports.  The order determines the primary default transport.
 srvlookup=yes                   ; Enable DNS SRV lookups on outbound calls
@@ -137,7 +137,7 @@ Go to `file -> add account` and fill in the following details:
 
 ```
 ID (URI) = sip:incoming@localhost
-Registrar (URI) = sip:localhost;transport=tcp
+Registrar (URI) = sip:localhost
 Auth username = incoming
 password = 123456
 ```

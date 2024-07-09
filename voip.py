@@ -110,6 +110,8 @@ class AudioMediaPort(pj.AudioMediaPort):
 		self.clockRate = fmt.clockRate
 		self.playTasks = []
 		self.recordTasks = []
+		self.lastFrameReq = None
+		self.frameNsec = fmt.frameTimeUsec * 1000
 
 	def playPCM(self, pcm):
 		future = asyncio.Future()
@@ -143,6 +145,11 @@ class AudioMediaPort(pj.AudioMediaPort):
 		return future
 
 	def onFrameRequested(self, frame):
+		now = time.time_ns()
+		if self.lastFrameReq is not None and (now - self.lastFrameReq) < self.frameNsec:
+			diff = self.frameNsec - (now - self.lastFrameReq)
+			time.sleep(diff / 10**9)
+
 		frame.type = pj.PJMEDIA_TYPE_AUDIO
 		for i in range(self.samplesPerFrame):
 			x = 0
@@ -155,6 +162,7 @@ class AudioMediaPort(pj.AudioMediaPort):
 			frame.buf.append(low)
 			frame.buf.append(hi)
 
+		self.lastFrameReq = now
 		self.playTasks = [task for task in self.playTasks if not task.future.done()]
 
 	def onFrameReceived(self, frame):

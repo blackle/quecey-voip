@@ -181,7 +181,7 @@ class Call(pj.Call):
 
 		fmt = pj.MediaFormatAudio()
 		fmt.type = pj.PJMEDIA_TYPE_AUDIO
-		fmt.clockRate = 16000
+		fmt.clockRate = 8000
 		fmt.channelCount = 1
 		fmt.bitsPerSample = 16
 		fmt.frameTimeUsec = 20000

@@ -55,11 +55,13 @@ async def phoneTreeHandler(call):
 					playback.cancel()
 					await call.playTone(1000,.25)
 					controller = RecordController()
+					await asyncio.sleep(0.25)
 					record = call.recordPCM(controller=controller)
 					try:
 						dtmf = await asyncio.wait_for(call.getDTMF(), 60)
 					except:
 						dtmf = '#'
+					await asyncio.sleep(0.25)
 					controller.stop()
 					pcm = normalizePCM(await record)
 					await call.playTone(1333,.25)

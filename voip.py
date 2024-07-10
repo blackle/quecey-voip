@@ -358,6 +358,11 @@ async def sampleCallFunction(call):
 	await asyncio.sleep(.5)
 	await call.playTone(650, .5)
 	await asyncio.sleep(.5)
+	code = await asyncio.wait_for(call.getDTMF(n = 4), 60)
+	if code == "1234":
+		await call.playPCM(loadWAVtoPCM("assets/password_correct.wav"))
+	else:
+		await call.playPCM(loadWAVtoPCM("assets/password_incorrect.wav"))
 
 if __name__ == "__main__":
 	runVoipClient(sampleCallFunction)

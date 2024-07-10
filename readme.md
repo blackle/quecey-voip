@@ -41,80 +41,12 @@ Check that the install worked:
 python3 -c "import pjsua2"
 ```
 
-#### Asterisk Install
-
-Download the latest tar from https://www.asterisk.org/downloads/
-
-```sh
-sudo apt install libedit-dev uuid-dev libjansson-dev libxml2-dev libsqlite3-dev
-tar -xzf ~/asterisk-20-current.tar.gz
-cd asterisk-20.8.1
-./configure
-make menuconfig #go to "channel drivers" and enable chan_sip
-make
-sudo make install
-```
-
-Or you can install the `asterisk` package if you are on Ubuntu. Make sure to do `sudo systemctl disable asterisk.service` because we will be running it manually.
-
-#### Asterisk config
-
-Set the following files in /etc/asterisk/ to the supplied content:
-
-sip.conf
-```ini
-[general]
-context=public                  ; Default context for incoming calls. Defaults to 'default'
-allowoverlap=no                 ; Disable overlap dialing support. (Default is yes)
-udpbindaddr=0.0.0.0             ; IP address to bind UDP listen socket to (0.0.0.0 binds to all)
-tcpenable=false                 ; Enable server for incoming TCP connections (default is no)
-tcpbindaddr=0.0.0.0             ; IP address for TCP server to bind to (0.0.0.0 binds to all interfaces)
-transport=tcp                   ; Set the default transports.  The order determines the primary default transport.
-srvlookup=yes                   ; Enable DNS SRV lookups on outbound calls
-qualify=yes
-
-[authentication]
-
-[experiment]
-type=friend
-secret=123456
-host=dynamic
-context=experiments
-allow=alaw,ulaw,gsm,opus
-
-[incoming]
-type=friend
-secret=123456
-host=dynamic
-context=experiments
-allow=alaw,ulaw,gsm,opus
-```
-
-extensions.conf
-```ini
-[experiments]
-exten => 1,1,Dial(SIP/experiment,10)
-```
-
-modules.conf
-```ini
-[modules]
-autoload=yes
-```
-
-In a separate terminal, run asterisk:
-```sh
-sudo -i asterisk /usr/sbin/asterisk -fcvvv
-```
-
 #### Cloning this repo
 
 ```sh
 git clone https://github.com/blackle/quecey-voip.git
 cd quecey-voip
 ```
-
-Edit the `run_with_creds.sh` script to replace all the instances of "blackle" with "experiment"
 
 Run a sample app with:
 
@@ -136,14 +68,11 @@ python3 ./application.py
 Go to `file -> add account` and fill in the following details:
 
 ```
-ID (URI) = sip:incoming@localhost
-Registrar (URI) = sip:localhost
-Auth username = incoming
-password = 123456
+ID (URI) = sip:test
 ```
 
-After creating the account, it should list itself as "registered." If not, make sure that asterisk is running.
+After creating the account, it should list itself as "doesn't register."
 
-Next, add a "buddy" by right clicking on the account. Set its URI to `sip:1@localhost`
+Next, add a "buddy" by right clicking on the account. Set its URI to `sip:localhost:5061`
 
-Right click on the buddy to start the audio call. You should hear a list of tones in order.
+Right click on the buddy to start the audio call. You should hear a list of tones in order. Type "1234" into the keypad after the tones to hear "password correct."

@@ -10,7 +10,7 @@ Here's the steps to getting a development environment setup. I used debian.
 
 General deps:
 ```sh
-sudo apt install build-essential git python3-dev swig portaudio19-dev libpulse-dev libopus-dev libssl-dev libsdl2-dev
+sudo apt install build-essential git python3-dev swig libopus-dev libssl-dev libsdl2-dev
 ```
 
 Pjsip
@@ -119,7 +119,7 @@ Edit the `run_with_creds.sh` script to replace all the instances of "blackle" wi
 Run a sample app with:
 
 ```sh
-# use LD_PRELOAD_PATH if you installed pjproject to a --prefix
+# use LD_LIBRARY_PATH if you installed pjproject to a --prefix
 ./run_with_creds.sh ./voip.py
 ```
 

@@ -198,11 +198,15 @@ class Call(pj.Call):
 		self.port = AudioMediaPort(fmt)
 		self.port.createPort("port", fmt)
 
+		self.remoteUri = "\"UNKNOWN\" <sip:unknown@localhost>"
+
 		self.future = None
 		self.task = None #todo: cancel task on call hangup
 
 	def onCallState(self, prm):
 		ci = self.getInfo()
+		self.remoteUri = ci.remoteUri
+		print("onCallState", self.remoteUri)
 		if ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:
 			if self.task is not None:
 				self.task.cancel()
@@ -255,6 +259,9 @@ class CallInterface:
 	recordPCM = delegate_method("port", "recordPCM")
 	recordCustom = delegate_method("port", "recordCustom")
 
+	def getRemoteUri(self):
+		return self.call.remoteUri
+
 
 class Account(pj.Account):
 	def __init__(self, ep):
@@ -266,11 +273,18 @@ class Account(pj.Account):
 		print("Incoming call!")
 
 		call = Call(self, call_id=prm.callId)
+		self.calls.add(call)
+
+		if 'IP_WHITELIST' in os.environ and prm.rdata.srcAddress != os.environ['IP_WHITELIST']:
+			print("rejecting call")
+			call_prm = pj.CallOpParam()
+			call_prm.statusCode = 403
+			call.hangup(call_prm)
+			return
 
 		call_prm = pj.CallOpParam()
 		call_prm.statusCode = 200
 		call.answer(call_prm)
-		self.calls.add(call)
 
 	def updateCallState(self, call, ci):
 		if ci.state == pj.PJSIP_INV_STATE_DISCONNECTED:

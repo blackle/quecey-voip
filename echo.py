@@ -4,7 +4,7 @@ import pickle
 import queue
 from voip import runVoipClient
 
-async def echoHandler(call):
+async def handler(call):
 	sampleQueue = queue.Queue(maxsize=16000*2)
 	stop = False
 	def sampleInput(sample):
@@ -25,4 +25,4 @@ async def echoHandler(call):
 
 
 if __name__ == "__main__":
-	runVoipClient(echoHandler)
+	runVoipClient(handler)

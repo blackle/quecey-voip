@@ -19,7 +19,7 @@ answer_missing = loadWAVtoPCM("assets/phone_tree_answer_missing.wav")
 author_instructions = loadWAVtoPCM("assets/phone_tree_author_instructions.wav")
 author_finalize = loadWAVtoPCM("assets/phone_tree_author_finalize.wav")
 
-async def phoneTreeHandler(call):
+async def handler(call):
 	global phone_tree
 	tree_pos = "s"
 	playback = None
@@ -73,4 +73,4 @@ async def phoneTreeHandler(call):
 						save_phone_tree(phone_tree)
 
 if __name__ == "__main__":
-	runVoipClient(phoneTreeHandler)
+	runVoipClient(handler)

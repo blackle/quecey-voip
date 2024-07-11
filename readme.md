@@ -52,7 +52,7 @@ Run a sample app with:
 
 ```sh
 # use LD_LIBRARY_PATH if you installed pjproject to a --prefix
-./run_with_creds.sh ./voip.py
+./test.py
 ```
 
 Keep this running while we go on to the next step.
@@ -62,6 +62,7 @@ Keep this running while we go on to the next step.
 ```sh
 sudo apt install python3-tk
 cd pjproject/pjsip-apps/src/pygui
+# use LD_LIBRARY_PATH if you installed pjproject to a --prefix
 python3 ./application.py
 ```
 
@@ -73,6 +74,6 @@ ID (URI) = sip:test
 
 After creating the account, it should list itself as "doesn't register."
 
-Next, add a "buddy" by right clicking on the account. Set its URI to `sip:localhost:5061`
+Next, add a "buddy" by right clicking on the account. Set its URI to `sip:localhost:5060`
 
 Right click on the buddy to start the audio call. You should hear a list of tones in order. Type "1234" into the keypad after the tones to hear "password correct."

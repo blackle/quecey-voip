@@ -218,16 +218,19 @@ class Call(pj.Call):
 				self.port.startTransmit(am)
 				am.startTransmit(self.port)
 
-	def getDTMF(self, n=1):
+	def getDTMF(self, n=1, filter=None):
 		if self.future and not self.future.done():
 			raise Exception("getDTMF already called and not resolved")
 		self.future = asyncio.Future()
 		self.digitsToGet = n
+		self.digitsFilter = filter
 		self.digits = []
 		return self.future
 
 	def onDtmfDigit(self, prm):
 		if self.future and not self.future.done():
+			if self.digitsFilter is not None and prm.digit not in self.digitsFilter:
+				return
 			self.digits.append(prm.digit)
 			if len(self.digits) >= self.digitsToGet:
 				self.future.set_result("".join(self.digits))
@@ -275,12 +278,8 @@ class Account(pj.Account):
 			print("Call removed.")
 			call.__disown__()
 
-def runVoipClient(taskFunction, username=None, password=None, port=None, registrarUri=None, idUri=None):
-	if username is None: username = os.environ["QUECEY_VOIP_USERNAME"]
-	if password is None: password = os.environ["QUECEY_VOIP_PASSWORD"]
-	if port is None: port = int(os.environ["QUECEY_VOIP_PORT"])
-	if registrarUri is None: registrarUri = os.environ["QUECEY_VOIP_REGISTRAR_URI"]
-	if idUri is None: idUri = os.environ["QUECEY_VOIP_ID_URI"]
+def runVoipClient(taskFunction, port=None):
+	if port is None: port = 5060
 
 	ep_cfg = pj.EpConfig()
 
@@ -300,10 +299,7 @@ def runVoipClient(taskFunction, username=None, password=None, port=None, registr
 	ep.libStart()
 
 	acfg = pj.AccountConfig()
-	acfg.idUri = idUri
-	acfg.regConfig.registrarUri = registrarUri
-	cred = pj.AuthCredInfo("digest", "*", username, 0, password)
-	acfg.sipConfig.authCreds.append(cred)
+	acfg.idUri = "sip:quecey"
 	# Create the account
 	acc = Account(ep)
 	acc.create(acfg)
@@ -350,22 +346,3 @@ def runVoipClient(taskFunction, username=None, password=None, port=None, registr
 	# Destroy the library
 	ep.libDestroy()
 	ep = None
-
-async def sampleCallFunction(call):
-	await call.playTone(420, .5)
-	await asyncio.sleep(.5)
-	await call.playTone(560, .5)
-	await asyncio.sleep(.5)
-	await call.playTone(650, .5)
-	await asyncio.sleep(.5)
-	try:
-		code = await asyncio.wait_for(call.getDTMF(n = 4), 60)
-	except TimeoutError:
-		code = ""
-	if code == "1234":
-		await call.playPCM(loadWAVtoPCM("assets/password_correct.wav"))
-	else:
-		await call.playPCM(loadWAVtoPCM("assets/password_incorrect.wav"))
-
-if __name__ == "__main__":
-	runVoipClient(sampleCallFunction)

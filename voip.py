@@ -322,7 +322,7 @@ def runVoipClient(taskFunction, port=None):
 						iface = CallInterface(call, call.port)
 						try:
 							await taskFunction(iface)
-						except asyncio.exceptions.CancelledError as e:
+						except asyncio.CancelledError as e:
 							return
 						except Exception as e:
 							print("Unhandled exception in call handler:", e)

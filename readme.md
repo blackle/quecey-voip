@@ -253,3 +253,33 @@ def handler(call):
 ```
 
 With this in mind, you can use the "loop" optional parameter on playPCM to play the sound continuously in a loop, then do `playback.cancel()` to stop it when you want.
+
+#### Text-to-speech
+
+Text to speech is provided by espeak. To install it, use:
+
+```sh
+sudo apt install espeak-ng-espeak
+# for extra voices
+sudo apt install mbrola mbrola-en1 mbrola-us1 mbrola-us2 mbrola-us3
+```
+
+You can then use the TTStoPCM method in the "tts" module:
+
+```py
+from tts import TTStoPCM
+
+def handler(call):
+	await call.playPCM(TTStoPCM("this is a test of speech to text"))
+```
+
+This works by forking out espeak and getting its stdout. You can pass your own arguments to espeak like so:
+
+```py
+from tts import TTStoPCM
+
+def handler(call):
+	await call.playPCM(TTStoPCM("this is a test of speech to text",
+		opts=["-v", "us-mbrola-3"]
+	))
+```

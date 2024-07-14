@@ -35,13 +35,34 @@ def floatToPacked(x):
 	x = struct.unpack('<H', struct.pack('<h', x))[0]
 	return (x & 0xff, (x & 0xff00) >> 8)
 
+def resample(samples, to, fro):
+	overflow = 0
+	avg = 0
+	count = 0
+	resampled = []
+	for i in range(len(samples)):
+		overflow += fro/to
+		if overflow > 1:
+			overflow -= 1
+			resampled.append(avg/count)
+			avg = 0
+			count = 0
+		avg += samples[i]
+		count += 1
+	return resampled
+
 def loadWAVtoPCM(filename):
 	pcm = []
 	with wave.open(filename, mode='rb') as w:
+		rate = w.getframerate()
+		assert(rate >= 8000)
 		data = w.readframes(w.getnframes())
 		for i in range(len(data)):
 			if i % 2 == 1:
 				pcm.append(packedToFloat(data[i], data[i-1]))
+		if rate != 8000:
+			pcm = resample(pcm, rate, 8000)
+
 	return pcm
 
 class AudioPlaybackTask:

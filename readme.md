@@ -251,3 +251,5 @@ def handler(call):
 	else:
 		await do_thing_for_other(call)
 ```
+
+With this in mind, you can use the "loop" optional parameter on playPCM to play the sound continuously in a loop, then do `playback.cancel()` to stop it when you want.

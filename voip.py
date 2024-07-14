@@ -45,17 +45,21 @@ def loadWAVtoPCM(filename):
 	return pcm
 
 class AudioPlaybackTask:
-	def __init__(self, future, pcm):
+	def __init__(self, future, pcm, loop):
 		self.future = future
 		self.t = 0
 		self.pcm = pcm
+		self.loop = loop
 
 	def getSample(self):
 		if self.future.done():
 			return 0
 		if self.t >= len(self.pcm):
-			self.future.set_result(True)
-			return 0
+			if not self.loop:
+				self.future.set_result(True)
+				return 0
+			else:
+				self.t = 0
 		x = self.pcm[self.t]
 		self.t += 1
 		return x
@@ -113,9 +117,9 @@ class AudioMediaPort(pj.AudioMediaPort):
 		self.nextDeadline = None
 		self.frameNsec = fmt.frameTimeUsec * 1000
 
-	def playPCM(self, pcm):
+	def playPCM(self, pcm, loop=False):
 		future = asyncio.Future()
-		self.playTasks.append(AudioPlaybackTask(future, pcm))
+		self.playTasks.append(AudioPlaybackTask(future, pcm, loop))
 		return future
 
 	def playCustom(self, func):

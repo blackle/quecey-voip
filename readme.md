@@ -2,85 +2,24 @@
 
 This is a framework for making sip voice services like phone trees, synthesizers, sstv generators, and other experiments.
 
-### Setup
+### Dev Environment
 
-Here's the steps to getting a development environment setup. I used debian.
+Getting your environment setup so you can develop your own phone experiment is fairly straightforward. The code is written so that you don't need to install PJSIP (the SIP library) to do local experiment programming.
 
-#### Dependencies
-
-General deps:
-```sh
-sudo apt install build-essential git python3-dev swig libopus-dev libssl-dev libsdl2-dev
-```
-
-Pjsip
-```sh
-# using my branch because it adds a dtmf keypad to the python sample
-git clone https://github.com/blackle/pjproject.git
-cd pjproject
-git checkout blackle
-# you can use a local --prefix to install locally
-./configure --enable-shared --prefix=/usr
-make dep
-make
-# don't use sudo make install if you set a --prefix, just "make install"
-sudo make install
-```
-
-Pjsip python SWIG bindings
-```sh
-# in pjproject
-cd pjsip-apps/src/swig/python
-make
-make install
-```
-
-Check that the install worked:
-```sh
-# if you are using a local --prefix, you need to set LD_LIBRARY_PATH=your_prefix/lib
-python3 -c "import pjsua2"
-```
-
-#### Cloning this repo
+You will need to install [PyAudio](https://pypi.org/project/PyAudio/) for audio playback/recording to work. On debian/ubuntu, you can do this like so:
 
 ```sh
-git clone https://github.com/blackle/quecey-voip.git
-cd quecey-voip
+sudo apt install portaudio19-dev
+pip3 install PyAudio
 ```
 
-Run a sample app with:
+Once you're done, you should be able to run the python script `test.py`, which will play some tones. After the tones, type the numbers "1234" into the terminal to hear "password correct."
 
-```sh
-# use LD_LIBRARY_PATH if you installed pjproject to a --prefix
-./test.py
-```
-
-Keep this running while we go on to the next step.
-
-#### Using PJSIP's call software
-
-```sh
-sudo apt install python3-tk
-cd pjproject/pjsip-apps/src/pygui
-# use LD_LIBRARY_PATH if you installed pjproject to a --prefix
-python3 ./application.py
-```
-
-Go to `file -> add account` and fill in the following details:
-
-```
-ID (URI) = sip:test
-```
-
-After creating the account, it should list itself as "doesn't register."
-
-Next, add a "buddy" by right clicking on the account. Set its URI to `sip:localhost:5060`
-
-Right click on the buddy to start the audio call. You should hear a list of tones in order. Type "1234" into the keypad after the tones to hear "password correct."
+For instructions on how to setup the voip library for running on a server that receives *actual* SIP calls, look at [server_setup.md](server_setup.md)
 
 ### API Documentation
 
-Everything relevant to handling a call is in the "voip" module. The runVoipClient function starts a new SIP client that uses a provided async function to deal with incoming calls. To end a call, simply return from the handler function early, or raise an unhandled exception.
+Everything relevant to handling a call is in the "voip" module. The runVoipClient function starts a new (simulated) SIP client that uses a provided async function to deal with incoming calls. To end a call, simply return from the handler function early, or raise an unhandled exception.
 
 #### Simple "Hello World"
 
@@ -101,13 +40,11 @@ if __name__ == "__main__":
 
 The crux of this example is that when a new phone call comes in, your "handler" function will be called with a "call" object. This call object provides many methods, some of which are async (and therefore require you to "await" them) and some of which are not.
 
-Run this with the LD_LIBRARY_PATH environment variable set if you used a custom --prefix to install PJSIP.
-
-You can now call this application using PJSIP's call software, like how you did in the previous section. You should hear three tones in order.
+Running this script from the commandline will use the developer-only simulated SIP code, which will make a call right away. It should also recieve your microphone's input, which we will use later.
 
 #### Playing a custom sound
 
-To play a custom sound, first you need to convert it to a 16-bit, 8000Hz WAV. You can use sox for this
+To play a custom sound, first you need to convert it to a 16-bit, 8000Hz WAV. You can use sox for this:
 
 ```sh
 sox -V my_sound.mp3 -r 8000 -c 1 -t wav my_sound.wav

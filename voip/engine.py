@@ -93,6 +93,7 @@ class AudioEngine():
 		return future
 
 	def playTone(self, pitch, duration):
+		print("playing tone")
 		def toneFunc(t, delta):
 			if t > duration:
 				return None

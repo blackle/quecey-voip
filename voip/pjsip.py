@@ -1,10 +1,9 @@
 import pjsua2 as pj
-import time
-import math
 import asyncio
 import os
 from .pcm import floatToPacked, packedToFloat
 from .engine import AudioEngine
+from .dtmf import DTMF
 
 class AudioMediaPort(pj.AudioMediaPort):
 	def __init__(self, fmt):
@@ -51,7 +50,7 @@ class Call(pj.Call):
 
 		self.remoteUri = "\"UNKNOWN\" <sip:unknown@localhost>"
 
-		self.future = None
+		self.dtmf = DTMF()
 		self.task = None #todo: cancel task on call hangup
 
 	def onCallState(self, prm):
@@ -73,23 +72,8 @@ class Call(pj.Call):
 				self.port.startTransmit(am)
 				am.startTransmit(self.port)
 
-	def getDTMF(self, n=1, filter=None):
-		if self.future and not self.future.done():
-			raise Exception("getDTMF already called and not resolved")
-		self.future = asyncio.Future()
-		self.digitsToGet = n
-		self.digitsFilter = filter
-		self.digits = []
-		return self.future
-
 	def onDtmfDigit(self, prm):
-		if self.future and not self.future.done():
-			if self.digitsFilter is not None and prm.digit not in self.digitsFilter:
-				return
-			self.digits.append(prm.digit)
-			if len(self.digits) >= self.digitsToGet:
-				self.future.set_result("".join(self.digits))
-				self.future = None
+		self.dtmf.onDtmfDigit(prm.digit)
 
 def delegate_method(delegate_to, method_name):
 	def wrapper(self, *args, **kwargs):
@@ -99,8 +83,9 @@ def delegate_method(delegate_to, method_name):
 	return wrapper
 
 class CallInterface:
-	def __init__(self, dtmf, engine):
-		self.dtmf = call
+	def __init__(self, call, dtmf, engine):
+		self.call = call
+		self.dtmf = dtmf
 		self.engine = engine
 
 	getDTMF = delegate_method("dtmf", "getDTMF")
@@ -183,7 +168,7 @@ def runVoipClient(taskFunction, port=None):
 			for call in calls:
 				if call.task is None:
 					async def call_func(call):
-						iface = CallInterface(call, call.port.engine)
+						iface = CallInterface(call, call.dtmf, call.port.engine)
 						try:
 							await taskFunction(iface)
 						except asyncio.CancelledError as e:

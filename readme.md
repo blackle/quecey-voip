@@ -11,6 +11,8 @@ You will need to install [PyAudio](https://pypi.org/project/PyAudio/) for audio 
 ```sh
 sudo apt install portaudio19-dev
 pip3 install PyAudio
+# or if pip isn't available
+sudo apt install python3-pyaudio
 ```
 
 Once you're done, you should be able to run the python script `test.py`, which will play some tones. After the tones, type the numbers "1234" into the terminal to hear "password correct."

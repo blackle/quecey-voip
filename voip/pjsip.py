@@ -4,157 +4,36 @@ import math
 import asyncio
 import os
 from .pcm import floatToPacked, packedToFloat
-
-class RecordController:
-	def __init__(self):
-		self.stopped = False
-
-	def stop(self):
-		self.stopped = True
-
-class AudioPlaybackTask:
-	def __init__(self, future, pcm, loop):
-		self.future = future
-		self.t = 0
-		self.pcm = pcm
-		self.loop = loop
-
-	def getSample(self):
-		if self.future.done():
-			return 0
-		if self.t >= len(self.pcm):
-			if not self.loop:
-				self.future.set_result(True)
-				return 0
-			else:
-				self.t = 0
-		x = self.pcm[self.t]
-		self.t += 1
-		return x
-
-class AudioPlaybackCustomTask:
-	def __init__(self, future, func, clockRate):
-		self.future = future
-		self.t = 0
-		self.func = func
-		self.clockRate = clockRate
-
-	def getSample(self):
-		if self.future.done():
-			return 0
-		x = self.func(self.t / self.clockRate, 1 / self.clockRate)
-		if x is None:
-			self.future.set_result(True)
-			return 0
-		self.t += 1
-		return x
-
-class AudioRecordTask:
-	def __init__(self, controller, future, maxlen):
-		self.controller = controller
-		self.future = future
-		self.maxlen = maxlen
-		self.pcm = []
-
-	def addSample(self, x):
-		if self.future.done():
-			return
-		self.pcm.append(x)
-		if (self.maxlen and len(self.pcm) >= self.maxlen) or (self.controller and self.controller.stopped):
-			self.future.set_result(self.pcm)
-
-class AudioRecordCustomTask:
-	def __init__(self, future, func):
-		self.func = func
-		self.future = future
-
-	def addSample(self, x):
-		if self.future.done():
-			return
-		if self.func(x) == False:
-			self.future.set_result(True)
+from .engine import AudioEngine
 
 class AudioMediaPort(pj.AudioMediaPort):
 	def __init__(self, fmt):
 		pj.AudioMediaPort.__init__(self)
-		self.time = 0
-		self.samplesPerFrame = (fmt.clockRate * fmt.frameTimeUsec) // 1000000
-		self.clockRate = fmt.clockRate
-		self.playTasks = []
-		self.recordTasks = []
-		self.nextDeadline = None
-		self.frameNsec = fmt.frameTimeUsec * 1000
-
-	def playPCM(self, pcm, loop=False):
-		future = asyncio.Future()
-		self.playTasks.append(AudioPlaybackTask(future, pcm, loop))
-		return future
-
-	def playCustom(self, func):
-		future = asyncio.Future()
-		self.playTasks.append(AudioPlaybackCustomTask(future, func, self.clockRate))
-		return future
-
-	def playTone(self, pitch, duration):
-		def toneFunc(t, delta):
-			if t > duration:
-				return None
-			return math.sin(t * pitch * math.pi * 2)
-		future = asyncio.Future()
-		self.playTasks.append(AudioPlaybackCustomTask(future, toneFunc, self.clockRate))
-		return future
-
-	def recordPCM(self, controller=None, maxlen=None):
-		if controller is None and maxlen is None:
-			raise Exception("recordPCM called with no way to stop recording")
-		future = asyncio.Future()
-		self.recordTasks.append(AudioRecordTask(controller, future, maxlen))
-		return future
-
-	def recordCustom(self, func):
-		future = asyncio.Future()
-		self.recordTasks.append(AudioRecordCustomTask(future, func))
-		return future
+		samplesPerFrame = (fmt.clockRate * fmt.frameTimeUsec) // 1000000
+		clockRate = fmt.clockRate
+		frameNsec = fmt.frameTimeUsec * 1000
+		self.engine = AudioEngine(samplesPerFrame, clockRate, frameNsec)
 
 	def onFrameRequested(self, frame):
-		now = time.time_ns()
-		if self.nextDeadline is not None:
-			if now < self.nextDeadline:
-				return
-		else:
-			self.nextDeadline = now
-		self.nextDeadline += self.frameNsec
+		samples = self.engine.onFrameRequested()
+
+		if samples is None:
+			return
 
 		frame.type = pj.PJMEDIA_TYPE_AUDIO
-		for i in range(self.samplesPerFrame):
-			x = 0
-			for task in self.playTasks:
-				x += task.getSample()
-
-			x = min(max(-1,x),1)
-
+		for x in samples:
 			low, hi = floatToPacked(x)
 			frame.buf.append(low)
 			frame.buf.append(hi)
 
-		self.playTasks = [task for task in self.playTasks if not task.future.done()]
-
 	def onFrameReceived(self, frame):
-		if len(self.recordTasks) == 0:
-			return
-
+		samples = []
 		for i in range(frame.buf.size()):
 			if i % 2 == 1:
 				x = packedToFloat(frame.buf[i], frame.buf[i-1])
-				for task in self.recordTasks:
-					task.addSample(x)
+				samples.append(x)
 
-		self.recordTasks = [task for task in self.recordTasks if not task.future.done()]
-
-def genAudio(t, delta):
-	if t > .1:
-		return None
-	return math.sin(t * 440 * math.pi * 2)
+		self.engine.onFrameReceived(samples)
 
 class Call(pj.Call):
 	def __init__(self, acc, call_id=pj.PJSUA_INVALID_ID):
@@ -220,16 +99,16 @@ def delegate_method(delegate_to, method_name):
 	return wrapper
 
 class CallInterface:
-	def __init__(self, call, port):
-		self.call = call
-		self.port = port
+	def __init__(self, dtmf, engine):
+		self.dtmf = call
+		self.engine = engine
 
-	getDTMF = delegate_method("call", "getDTMF")
-	playPCM = delegate_method("port", "playPCM")
-	playTone = delegate_method("port", "playTone")
-	playCustom = delegate_method("port", "playCustom")
-	recordPCM = delegate_method("port", "recordPCM")
-	recordCustom = delegate_method("port", "recordCustom")
+	getDTMF = delegate_method("dtmf", "getDTMF")
+	playPCM = delegate_method("engine", "playPCM")
+	playTone = delegate_method("engine", "playTone")
+	playCustom = delegate_method("engine", "playCustom")
+	recordPCM = delegate_method("engine", "recordPCM")
+	recordCustom = delegate_method("engine", "recordCustom")
 
 	def getRemoteUri(self):
 		return self.call.remoteUri
@@ -303,8 +182,8 @@ def runVoipClient(taskFunction, port=None):
 			calls = list(acc.calls)
 			for call in calls:
 				if call.task is None:
-					async def call_func(call, port):
-						iface = CallInterface(call, call.port)
+					async def call_func(call):
+						iface = CallInterface(call, call.port.engine)
 						try:
 							await taskFunction(iface)
 						except asyncio.CancelledError as e:
@@ -317,7 +196,7 @@ def runVoipClient(taskFunction, port=None):
 							call_prm = pj.CallOpParam()
 							call_prm.statusCode = 200
 							call.hangup(call_prm)
-					call.task = loop.create_task(call_func(call, call.port))
+					call.task = loop.create_task(call_func(call))
 		except KeyboardInterrupt:
 			break
 

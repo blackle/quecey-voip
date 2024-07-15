@@ -74,10 +74,8 @@ class AudioRecordCustomTask:
 			self.future.set_result(True)
 
 class AudioEngine():
-	def __init__(self, samplesPerFrame, clockRate, frameNsec):
-		self.samplesPerFrame = samplesPerFrame
+	def __init__(self, clockRate):
 		self.clockRate = clockRate
-		self.frameNsec = frameNsec
 		self.playTasks = []
 		self.recordTasks = []
 		self.nextDeadline = None
@@ -93,7 +91,6 @@ class AudioEngine():
 		return future
 
 	def playTone(self, pitch, duration):
-		print("playing tone")
 		def toneFunc(t, delta):
 			if t > duration:
 				return None
@@ -114,17 +111,17 @@ class AudioEngine():
 		self.recordTasks.append(AudioRecordCustomTask(future, func))
 		return future
 
-	def onFrameRequested(self):
+	def onFrameRequested(self, num_samples):
 		now = time.time_ns()
 		if self.nextDeadline is not None:
 			if now < self.nextDeadline:
 				return None
 		else:
 			self.nextDeadline = now
-		self.nextDeadline += self.frameNsec
+		self.nextDeadline += int(num_samples / self.clockRate * 1_000_000_000)
 
 		samples = []
-		for i in range(self.samplesPerFrame):
+		for i in range(num_samples):
 			x = 0
 			for task in self.playTasks:
 				x += task.getSample()

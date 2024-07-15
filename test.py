@@ -11,7 +11,7 @@ async def handler(call):
 	await asyncio.sleep(.5)
 	try:
 		code = await asyncio.wait_for(call.getDTMF(n = 4), 60)
-	except 	:
+	except TimeoutError:
 		code = ""
 	if code == "1234":
 		await call.playPCM(loadWAVtoPCM("assets/password_correct.wav"))

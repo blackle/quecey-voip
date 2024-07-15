@@ -59,7 +59,7 @@ async def handler(call):
 					record = call.recordPCM(controller=controller)
 					try:
 						dtmf = await asyncio.wait_for(call.getDTMF(), 60)
-					except:
+					except TimeoutError:
 						dtmf = '#'
 					await asyncio.sleep(0.25)
 					controller.stop()

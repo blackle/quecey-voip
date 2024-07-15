@@ -139,7 +139,7 @@ def runVoipClient(taskFunction, port=None):
 
 	while True:
 		try:
-			loop.run_until_complete(asyncio.sleep(0.1))
+			loop.run_until_complete(asyncio.sleep(0.001))
 			calls = list(acc.calls)
 			for call in calls:
 				if call.task is None:

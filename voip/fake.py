@@ -5,7 +5,7 @@ from .pcm import floatToPacked, packedToFloat
 from .engine import AudioEngine
 from .dtmf import DTMF
 from .iface import CallInterface
-
+import curses
 
 class FakeCall:
 	def __init__(self):
@@ -47,8 +47,20 @@ class FakeCall:
 		self.output.close()
 		self.p.terminate()
 
+class RateLimiter():
+	def __init__(self, ns):
+		self.ns = ns
+		self.then = time.time_ns()
 
-def runVoipClient(taskFunction, port=None):
+	def check(self):
+		now = time.time_ns()
+		if (now - self.then) > self.ns:
+			self.then = now
+			return True
+		return False
+
+def runVoipClientReal(screen, taskFunction):
+	screen.nodelay(True)
 	loop = asyncio.get_event_loop()
 
 	call = FakeCall()
@@ -63,12 +75,24 @@ def runVoipClient(taskFunction, port=None):
 			print("Unhandled exception in call handler:", e)
 			pass
 
-	print("starting call")
 	task = loop.create_task(call_func(call))
 
+	text = ""
+	limiter = RateLimiter(100_000_000)
 	while not task.done():
 		try:
-			loop.run_until_complete(asyncio.sleep(0.01))
+			loop.run_until_complete(asyncio.sleep(0.001))
+			if limiter.check():
+				screen.clear()
+				screen.move(0,0)
+				screen.addstr(text)
+			try:
+				key = screen.getkey()
+				if key in "1234567890#*":
+					text = "pressed "+key
+					call.dtmf.onDtmfDigit(key)
+			except Exception as e:
+				pass
 			# todo: get keypad input here and send it into call.dtmf
 		except KeyboardInterrupt:
 			task.cancel()
@@ -77,3 +101,6 @@ def runVoipClient(taskFunction, port=None):
 	task.cancel()
 	loop.run_until_complete(asyncio.gather(*asyncio.all_tasks(loop)))
 	loop.close()
+
+def runVoipClient(taskFunction, port=None):
+	curses.wrapper(lambda x,taskFunction=taskFunction:runVoipClientReal(x, taskFunction))

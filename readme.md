@@ -123,7 +123,7 @@ async def handler(call):
 	# start recording
 	recorder = call.recordPCM(controller)
 	# wait for a keypress
-	key = call.getDTMF()
+	key = await call.getDTMF()
 	# stop recording
 	controller.stop()
 	# get the recording

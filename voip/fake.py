@@ -6,6 +6,7 @@ from .engine import AudioEngine
 from .dtmf import DTMF
 from .iface import CallInterface
 import curses
+from contextlib import redirect_stdout
 
 class FakeCall:
 	def __init__(self):
@@ -59,8 +60,47 @@ class RateLimiter():
 			return True
 		return False
 
-def runVoipClientReal(screen, taskFunction):
-	screen.nodelay(True)
+class CursesPrinter():
+	def __init__(self, screen):
+		self.screen = screen
+		self.height, self.width = self.screen.getmaxyx()
+		self.text = ""
+		self.textupdated = False
+		self.limiter = RateLimiter(100_000_000)
+		self.frame = None
+
+	def write(self, data):
+		self.text += data
+		self.textupdated = True
+
+	def close(self):
+		pass
+
+	def flush(self):
+		pass
+
+	def setFrame(self, frame):
+		self.frame = frame
+
+	def commit(self, force=False):
+		if self.limiter.check() or force:
+			oldheight = self.height
+			self.height, self.width = self.screen.getmaxyx()
+			if self.height != oldheight or self.textupdated:
+				self.text = "\n".join(self.text.split("\n")[-self.height:])
+				self.textupdated = False
+			self.screen.clear()
+			self.screen.move(0,0)
+			try:
+				self.screen.addstr(self.text)
+			except Exception:
+				pass
+			if self.frame is not None:
+				self.screen.move(11,0)
+				self.screen.addstr(str(self.frame))
+
+
+def runVoipClientReal(printer, screen, taskFunction):
 	loop = asyncio.get_event_loop()
 
 	call = FakeCall()
@@ -76,31 +116,43 @@ def runVoipClientReal(screen, taskFunction):
 			pass
 
 	task = loop.create_task(call_func(call))
+	print("Call started")
 
-	text = ""
-	limiter = RateLimiter(100_000_000)
 	while not task.done():
 		try:
 			loop.run_until_complete(asyncio.sleep(0.001))
-			if limiter.check():
-				screen.clear()
-				screen.move(0,0)
-				screen.addstr(text)
+			printer.commit()
 			try:
 				key = screen.getkey()
 				if key in "1234567890#*":
-					text = "pressed "+key
+					print("User pressed "+key)
 					call.dtmf.onDtmfDigit(key)
 			except Exception as e:
 				pass
 			# todo: get keypad input here and send it into call.dtmf
 		except KeyboardInterrupt:
+			print("Cancelling call due to keyboard interrupt")
 			task.cancel()
 
+	print("Call ended")
 	call.hangup()
 	task.cancel()
 	loop.run_until_complete(asyncio.gather(*asyncio.all_tasks(loop)))
 	loop.close()
+	print("Press any key to quit")
+	printer.commit(force=True)
+	try:
+		screen.nodelay(False)
+		key = screen.getkey()
+	except KeyboardInterrupt:
+		pass
+
+def runVoipClientCurses(screen, taskFunction):
+	screen.nodelay(True)
+	printer = CursesPrinter(screen)
+
+	with redirect_stdout(printer):
+		runVoipClientReal(printer, screen, taskFunction)
 
 def runVoipClient(taskFunction, port=None):
-	curses.wrapper(lambda x,taskFunction=taskFunction:runVoipClientReal(x, taskFunction))
+	curses.wrapper(lambda x,taskFunction=taskFunction:runVoipClientCurses(x, taskFunction))

@@ -206,7 +206,7 @@ sudo apt install mbrola mbrola-en1 mbrola-us1 mbrola-us2 mbrola-us3
 You can then use the TTStoPCM method in the "tts" module:
 
 ```py
-from tts import TTStoPCM
+from voip.tts import TTStoPCM
 
 def handler(call):
 	await call.playPCM(TTStoPCM("this is a test of speech to text"))
@@ -215,8 +215,6 @@ def handler(call):
 This works by forking out espeak and getting its stdout. You can pass your own arguments to espeak like so:
 
 ```py
-from tts import TTStoPCM
-
 def handler(call):
 	await call.playPCM(TTStoPCM("this is a test of speech to text",
 		opts=["-v", "us-mbrola-3"]

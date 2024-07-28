@@ -22,7 +22,11 @@ songs = [
 	Song('Never Gonna Give You Up', 'Rick Astley', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
 	Song('Istanbul (Not Constantinople)', 'They Might Be Giants', 'https://www.youtube.com/watch?v=p6NzVd3pGdE'),
 	Song('Don\'t Forget', 'Laura Shigihara', 'https://www.youtube.com/watch?v=PEPbUhHhECU'),
-	Song('All Star', 'Smash Mouth', 'https://www.youtube.com/watch?v=-_RBJvfoszk')
+	Song('All Star', 'Smash Mouth', 'https://www.youtube.com/watch?v=-_RBJvfoszk'),
+	Song('360', 'Charli Xcx', 'https://www.youtube.com/watch?v=O_HoOpJ60C0'),
+	Song('Good Luck, Babe', 'Chappell Roan', 'https://www.youtube.com/watch?v=1RKqOmSkGgM'),
+	Song('Don\'t Don\'t Get Freaked Out', 'Negativland', 'https://www.youtube.com/watch?v=J3p1KhSVbSw'),
+	Song('They Might Be Giants', 'The Communists Have the Music', 'https://www.youtube.com/watch?v=vvCGZEqk8Ak')
 ]
 
 random.seed()

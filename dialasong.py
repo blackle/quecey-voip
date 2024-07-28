@@ -27,49 +27,63 @@ songs = [
 
 random.seed()
 
+def handle_child(child):
+	if child is not None:
+		# drain stdout and stderr to prevent zombie processes from remaining
+		child.communicate()
+		child.kill()
+
 async def handler(call):
 	idx = random.randrange(len(songs))
 	song = songs[idx]
 
-	ytdlp = subprocess.Popen(
-		[
-			shutil.which('yt-dlp'),
-			'-o-',
-			'-x',
-			song.url,
-		],
-		stdout=subprocess.PIPE,
-		stderr=subprocess.DEVNULL,
-	)
-	ffmpeg = subprocess.Popen(
-		[
-			shutil.which('ffmpeg'),
-			'-i', '-',
-			'-acodec', 'pcm_s16le',
-			'-ar', '8000',
-			'-ac', '1',
-			'-f', 's16le',
-			'-'
-		],
-		stdin=ytdlp.stdout,
-		stdout=subprocess.PIPE,
-		stderr=subprocess.DEVNULL,
-	)
+	ytdlp = None
+	ffmpeg = None
 
-	def songPlayer(t, delta):
-		try:
-			data = ffmpeg.stdout.read(2)
-			if len(data) < 2:
-				raise EOFError
-			(l, ) = struct.unpack('<h', data)
-			return l / 16384
-		except EOFError:
-			return None
+	try:
+		ytdlp = subprocess.Popen(
+			[
+				shutil.which('yt-dlp'),
+				'-o-',
+				'-x',
+				song.url,
+			],
+			stdout=subprocess.PIPE,
+			stderr=subprocess.DEVNULL,
+		)
+		ffmpeg = subprocess.Popen(
+			[
+				shutil.which('ffmpeg'),
+				'-i', '-',
+				'-acodec', 'pcm_s16le',
+				'-ar', '8000',
+				'-ac', '1',
+				'-f', 's16le',
+				'-'
+			],
+			stdin=ytdlp.stdout,
+			stdout=subprocess.PIPE,
+			stderr=subprocess.DEVNULL,
+		)
 
-	await call.playPCM(TTStoPCM(f'Now playing: {song.title} by {song.artist}'))
-	await call.playCustom(songPlayer)
-	await call.playPCM(TTStoPCM('Thank you for listening. Goodbye!'))
+		def songPlayer(t, delta):
+			try:
+				data = ffmpeg.stdout.read(2)
+				if len(data) < 2:
+					raise EOFError
+				(l, ) = struct.unpack('<h', data)
+				return l / 16384
+			except EOFError:
+				return None
 
+		await call.playPCM(TTStoPCM(f'Now playing: {song.title} by {song.artist}'))
+		await call.playCustom(songPlayer)
+		await call.playPCM(TTStoPCM('Thank you for listening. Goodbye!'))
+
+	except asyncio.CancelledError as e:
+		handle_child(ytdlp)
+		handle_child(ffmpeg)
+		raise e
 
 if __name__ == '__main__':
 	runVoipClient(handler)

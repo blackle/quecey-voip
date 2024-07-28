@@ -31,8 +31,6 @@ async def handler(call):
 	idx = random.randrange(len(songs))
 	song = songs[idx]
 
-	await call.playPCM(TTStoPCM(f'Now playing: {song.title} by {song.artist}'))
-
 	ytdlp = subprocess.Popen(
 		[
 			shutil.which('yt-dlp'),
@@ -67,7 +65,8 @@ async def handler(call):
 			return l / 16384
 		except EOFError:
 			return None
-		
+
+	await call.playPCM(TTStoPCM(f'Now playing: {song.title} by {song.artist}'))
 	await call.playCustom(songPlayer)
 	await call.playPCM(TTStoPCM('Thank you for listening. Goodbye!'))
 

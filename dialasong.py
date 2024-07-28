@@ -48,6 +48,7 @@ async def handler(call):
 			'-i', '-',
 			'-acodec', 'pcm_s16le',
 			'-ar', '8000',
+			'-ac', '1',
 			'-f', 's16le',
 			'-'
 		],
@@ -58,11 +59,11 @@ async def handler(call):
 
 	def songPlayer(t, delta):
 		try:
-			data = ffmpeg.stdout.read(4)
-			if len(data) < 4:
+			data = ffmpeg.stdout.read(2)
+			if len(data) < 2:
 				raise EOFError
-			(l, r) = struct.unpack('<hh', data)
-			return (l + r) / 65536
+			(l, ) = struct.unpack('<h', data)
+			return l / 16384
 		except EOFError:
 			return None
 		

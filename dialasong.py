@@ -72,7 +72,7 @@ async def handler(call):
 				if len(data) < 2:
 					raise EOFError
 				(l, ) = struct.unpack('<h', data)
-				return l / 16384
+				return l / 32768
 			except EOFError:
 				return None
 

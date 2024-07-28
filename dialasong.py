@@ -35,8 +35,9 @@ async def handler(call):
 
 	ytdlp = subprocess.Popen(
 		[
-			shutil.which("yt-dlp"),
-			"-o-",
+			shutil.which('yt-dlp'),
+			'-o-',
+			'-x',
 			song.url,
 		],
 		stdout=subprocess.PIPE,

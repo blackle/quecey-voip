@@ -26,7 +26,7 @@ songs = [
 	Song('360', 'Charli Xcx', 'https://www.youtube.com/watch?v=O_HoOpJ60C0'),
 	Song('Good Luck, Babe', 'Chappell Roan', 'https://www.youtube.com/watch?v=1RKqOmSkGgM'),
 	Song('Don\'t Don\'t Get Freaked Out', 'Negativland', 'https://www.youtube.com/watch?v=J3p1KhSVbSw'),
-	Song('They Might Be Giants', 'The Communists Have the Music', 'https://www.youtube.com/watch?v=vvCGZEqk8Ak')
+	Song('The Communists Have the Music', 'They Might Be Giants', 'https://www.youtube.com/watch?v=vvCGZEqk8Ak')
 ]
 
 random.seed()

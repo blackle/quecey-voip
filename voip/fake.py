@@ -112,7 +112,7 @@ def runVoipClientReal(printer, screen, taskFunction):
 		except asyncio.CancelledError as e:
 			raise asyncio.CancelledError
 		except Exception as e:
-			print("Unhandled exception in call handler:", e)
+			print(f"Unhandled {type(e).__name__} exception in call handler: {e}")
 			pass
 
 	task = loop.create_task(call_func(call))

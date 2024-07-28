@@ -15,6 +15,15 @@ pip3 install PyAudio
 sudo apt install python3-pyaudio
 ```
 
+For running/testing Dial-A-Song, you will also need `yt-dlp` and `ffmpeg` to be installed. On debian/ubuntu, you can do this like so:
+
+```sh
+sudo apt install ffmpeg
+pip3 install yt-dlp
+# or if pip isn't available
+sudo apt install yt-dlp
+```
+
 Once you're done, you should be able to run the python script `test.py`, which will play some tones. After the tones, type the numbers "1234" into the terminal to hear "password correct."
 
 For instructions on how to setup the voip library for running on a server that receives *actual* SIP calls, look at [server_setup.md](server_setup.md)

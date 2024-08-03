@@ -5,12 +5,14 @@ import phoneventure
 import test
 import echo
 import dialasong
+import hangman
 
 EXPERIMENTS = {
 	"1234": phoneventure.handler,
 	"9999": echo.handler,
 	"0000": test.handler,
 	"6962": dialasong.handler,
+	"4264": hangman.handler,
 }
 
 snd_enter_experiment = loadWAVtoPCM("assets/enter_experiment.wav")

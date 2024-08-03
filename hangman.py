@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from voip import runVoipClient, loadWAVtoPCM
+from voip import runVoipClient, loadWAVtoPCM, TTStoPCM
 from typing import List, Set
 import tempfile
 import subprocess
@@ -44,14 +44,8 @@ if debug:
 # requires espeak
 def play_speech(call, speech: str, loop: bool = False):
 	''' Play text speech over the call. '''
-	# run espeak command to convert text to speech, outputting a wav to stdout
-	process = subprocess.run(['espeak', '-v', 'english-north', '-p', str(pitch_adjust),
-		'-s', str(wpm), speech.strip(), '--stdout'], stdout=subprocess.PIPE)
-	if process.returncode != 0:
-		return None
-	# convert process stdout to file
-	wav = io.BytesIO(process.stdout)
-	return call.playPCM(loadWAVtoPCM(wav), loop = loop)
+	pcm = TTStoPCM(speech.strip(), opts = ['-p', str(pitch_adjust), '-s', str(wpm)])
+	return call.playPCM(pcm, loop = loop)
 
 def guess_valuation(guess: str, candidates: List[str]) -> int:
 	''' Returns how good we think this guess is, given the list of candidate words. '''

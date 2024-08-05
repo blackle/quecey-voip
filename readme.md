@@ -233,11 +233,12 @@ def handler(call):
 	await call.playPCM(TTStoPCM("this is a test of speech to text"))
 ```
 
-This works by forking out espeak and getting its stdout. You can pass your own arguments to espeak like so:
+This works by forking out a subprocess that handles the TTS and its stdout. There are two engines: espeak and rhvoice. You can specify which one you want with the `engine` optional parameter. You can pass your own arguments to the subprocess like so:
 
 ```py
 def handler(call):
 	await call.playPCM(TTStoPCM("this is a test of speech to text",
-		opts=["-v", "us-mbrola-3"]
+		engine="rhvoice",
+		opts=["-p", "slt"]
 	))
 ```

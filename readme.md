@@ -216,10 +216,10 @@ With this in mind, you can use the "loop" optional parameter on playPCM to play 
 
 #### Text-to-speech
 
-Text to speech is provided by espeak. To install it, use:
+Text to speech is provided by espeak or rhvoice. To install them, use:
 
 ```sh
-sudo apt install espeak-ng-espeak
+sudo apt install espeak-ng-espeak rhvoice rhvoice-english
 # for extra voices
 sudo apt install mbrola mbrola-en1 mbrola-us1 mbrola-us2 mbrola-us3
 ```
@@ -233,7 +233,7 @@ def handler(call):
 	await call.playPCM(TTStoPCM("this is a test of speech to text"))
 ```
 
-This works by forking out a subprocess that handles the TTS and its stdout. There are two engines: espeak and rhvoice. You can specify which one you want with the `engine` optional parameter. You can pass your own arguments to the subprocess like so:
+This works by forking out a subprocess that handles the TTS and its stdout. There are two engines: espeak and rhvoice. You can specify which one you want with the `engine` optional parameter, by default it is espeak. You can pass your own arguments to the subprocess like so:
 
 ```py
 def handler(call):

@@ -58,7 +58,7 @@ async def handler(call):
     # code, but that's not always accurate, and would be pain to map out
     currTime = datetime.datetime.now()
 
-    if 1 == 1:
+    if currTime.minute == 11:
         await call.playPCM(array("f", generate_fish()))
     else:
         await call.playPCM(loadWAVtoPCM("assets/fish_not_ready.wav"))

@@ -112,7 +112,7 @@ def runVoipClient(taskFunction, port=None):
 	ep_cfg.logConfig.consoleLevel = 0
 	ep_cfg.logConfig.msgLogging = False
 
-	ep_cfg.uaConfig.maxCalls = 1
+	ep_cfg.uaConfig.maxCalls = 10
 
 	ep_cfg.medConfig.clockRate = 8000
 	ep_cfg.medConfig.channelCount = 1

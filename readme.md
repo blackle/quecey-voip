@@ -53,6 +53,18 @@ The crux of this example is that when a new phone call comes in, your "handler" 
 
 Running this script from the commandline will use the developer-only simulated SIP code, which will make a call right away. It should also recieve your microphone's input, which we will use later.
 
+#### Enforcing one call at a time
+
+By default the voip system will accept 10 simultaneous calls. However, you might not want to deal with the particularities of concurrent calls in your experiment. For example, saving/loading data might be problematic if multiple people can be in the experiment at the same time. If you only want your call to be available if no active call is currently using it, you can use the `one_at_a_time` decorator.
+
+```py
+from voip import one_at_a_time
+
+@one_at_a_time
+async def handler(call):
+	# do stuff here...
+```
+
 #### Playing a custom sound
 
 To play a custom sound, first you need to convert it to a 16-bit, 8000Hz WAV. You can use sox for this:

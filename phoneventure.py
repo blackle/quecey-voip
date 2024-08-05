@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
 import pickle
-from voip import loadWAVtoPCM, runVoipClient, RecordController, normalizePCM
+from voip import loadWAVtoPCM, runVoipClient, RecordController, normalizePCM, one_at_a_time
 from datetime import datetime
 
 try:
@@ -19,6 +19,7 @@ answer_missing = loadWAVtoPCM("assets/phone_tree_answer_missing.wav")
 author_instructions = loadWAVtoPCM("assets/phone_tree_author_instructions.wav")
 author_finalize = loadWAVtoPCM("assets/phone_tree_author_finalize.wav")
 
+@one_at_a_time
 async def handler(call):
 	global phone_tree
 	tree_pos = "s"

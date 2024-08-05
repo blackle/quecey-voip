@@ -6,15 +6,16 @@ from os import path, listdir
 from array import array
 from voip import loadWAVtoPCM
 
+# Just to keep paths relative to main.py
 selfPath = path.dirname(path.realpath(__file__))
 
-backgroundsNormalPath = path.join(selfPath, "./bgs/normal")
-backgroundsWeirdPath = path.join(selfPath, "./bgs/weird")
-bodiesPath = path.join(selfPath, "./fishes/body")
-headsPath = path.join(selfPath, "./fishes/head")
-tailsPath = path.join(selfPath, "./fishes/tail")
+backgroundsNormalPath = path.join(selfPath, "bgs/normal")
+backgroundsWeirdPath = path.join(selfPath, "bgs/weird")
+bodiesPath = path.join(selfPath, "fishes/body")
+headsPath = path.join(selfPath, "fishes/head")
+tailsPath = path.join(selfPath, "fishes/tail")
 
-skeletonPath = path.join(selfPath, "./fish_skeleton.png")
+skeletonPath = path.join(selfPath, "fish_skeleton.png")
 
 backgroundsNormal = listdir(backgroundsNormalPath)
 backgroundsWeird = listdir(backgroundsWeirdPath)
@@ -24,6 +25,7 @@ tails = listdir(tailsPath)
 
 def generate_fish():
     # Import in scope to prevent crashes when dependencies arent installed
+    # I hope this doesn't cause any memory leaks
     from PIL import Image 
     from pysstv import color
 

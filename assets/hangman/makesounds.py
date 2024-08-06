@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# save common sounds to wav files
+# Save common sounds to wav files, so we don't have to generate them on-the-fly
 
 import subprocess, os
 
@@ -74,7 +74,9 @@ for filename in speeches:
 
 for filename, (speech, silence) in speeches.items():
 	print(f'Generating {filename}.wav...')
-	subprocess.run(['espeak', '-s', str(wpm),  '-p', '60', '-v', 'english-north', speech.strip(), '-w', f'{filename}.wav'])
+	with open('/tmp/hangman.txt', 'w') as f:
+		f.write(speech)
+	subprocess.run(['RHVoice-test', '-p', 'slt', '-i', '/tmp/hangman.txt', '-o', f'{filename}.wav'])
 	if silence: 
 		print(f'Adding silence to end of {filename}.wav...')
 		subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', f'{filename}.wav', '-af', 'apad=pad_dur=3', f'{filename}2.wav'])

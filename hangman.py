@@ -44,7 +44,7 @@ if debug:
 # requires espeak
 def play_speech(call, speech: str, loop: bool = False):
 	''' Play text speech over the call. '''
-	pcm = TTStoPCM(speech.strip(), opts = ['-p', str(pitch_adjust), '-s', str(wpm)])
+	pcm = TTStoPCM(speech.strip(), engine = 'rhvoice', opts = ['-p', 'slt'])
 	return call.playPCM(pcm, loop = loop)
 
 def guess_valuation(guess: str, candidates: List[str]) -> int:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
-from voip import runVoipClient, loadWAVtoPCM
+from voip import runVoipClient, loadWAVtoPCM, TTStoPCM
 
 async def handler(call):
 	await call.playTone(420, .5)
@@ -9,6 +9,7 @@ async def handler(call):
 	await asyncio.sleep(.5)
 	await call.playTone(650, .5)
 	await asyncio.sleep(.5)
+	await call.playPCM(TTStoPCM(call.getRemoteUri()))
 	try:
 		code = await asyncio.wait_for(call.getDTMF(n = 4), 60)
 	except TimeoutError:

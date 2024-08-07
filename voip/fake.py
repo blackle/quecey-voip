@@ -6,6 +6,7 @@ from .engine import AudioEngine
 from .dtmf import DTMF
 from .iface import CallInterface
 import curses
+import sys
 from contextlib import redirect_stdout
 
 class FakeCall:
@@ -13,7 +14,10 @@ class FakeCall:
 		clockRate = 8000
 		self.engine = AudioEngine(clockRate)
 		self.dtmf = DTMF()
-		self.remoteUri = "\"5556667777\" <sip:5556667777@localhost>"
+		self.remoteUri = "\"FAKE CALLER\" <sip:5556667777@127.0.0.1>"
+		if len(sys.argv) > 1:
+			phoneNumber = sys.argv[1]
+			self.remoteUri = f"\"FAKE CALLER\" <sip:{phoneNumber}@127.0.0.1>"
 
 		def input_callback(in_data, frame_count, time_info, status):
 			samples = []

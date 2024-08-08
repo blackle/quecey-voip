@@ -128,6 +128,15 @@ async def handler(call):
 	print(keys)
 ```
 
+You can also specify a lambda to run on the first digit pressed. This can be used to cancel a currently playing audio clip the moment a user hits a button when entering a multi-digit code. 
+
+```py
+async def handler(call):
+	playback = call.playPCM(my_sound)
+	keys = await call.getDTMF(n=4, filter="1234567890", on_first=lambda digit: playback.cancel())
+	print(keys)
+```
+
 #### Recording audio
 
 The call object has a "recordPCM" method. This returns a future which resolves to a list of floats, in the same format that playPCM expects. However, if you simply "await" on the method, it will never finish because it doesn't know how long it should record for.

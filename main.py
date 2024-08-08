@@ -21,12 +21,13 @@ snd_invalid_experiment = loadWAVtoPCM("assets/invalid_experiment.wav")
 snd_teleport = loadWAVtoPCM("assets/teleport.wav")
 
 async def handler(call):
-	await call.playPCM(snd_enter_experiment)
-	await call.playTone(1000, .25)
+	playback = call.playPCM(snd_enter_experiment)
+	# await call.playTone(1000, .25)
 	try:
-		code = await asyncio.wait_for(call.getDTMF(filter="0123456789", n=4), 60)
+		code = await asyncio.wait_for(call.getDTMF(filter="0123456789", n=4, on_first=lambda digit:playback.cancel()), 60)
 	except TimeoutError:
 		code = ""
+	playback.cancel()
 	if code in EXPERIMENTS:
 		await call.playPCM(snd_teleport)
 		await EXPERIMENTS[code](call)

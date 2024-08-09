@@ -29,9 +29,11 @@ async def handler(call):
 		code = ""
 	playback.cancel()
 	if code in EXPERIMENTS:
+		print(f"Executing experiment #{code}")
 		await call.playPCM(snd_teleport)
 		await EXPERIMENTS[code](call)
 	else:
+		print(f"No experiment #{code}")
 		await call.playPCM(snd_invalid_experiment)
 
 if __name__ == "__main__":

@@ -150,7 +150,7 @@ def runVoipClient(taskFunction, port=None):
 						except asyncio.CancelledError as e:
 							return
 						except Exception as e:
-							print("Unhandled exception in call handler:", e)
+							print(f"Unhandled {type(e).__name__} exception in call handler: {e}")
 							pass
 						call.task = None
 						if call.isActive():

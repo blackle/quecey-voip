@@ -24,3 +24,4 @@ class DTMF:
 			if len(self.digits) >= self.digitsToGet:
 				self.future.set_result("".join(self.digits))
 				self.future = None
+				self.on_first = None

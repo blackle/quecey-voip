@@ -51,3 +51,10 @@ def loadWAVtoPCM(filename):
 			pcm = resample(pcm, rate, 8000)
 
 	return pcm
+
+def savePCMtoWAV(pcm, filename):
+	pcm_s16 = [int(x * 32767) for x in pcm]
+	with wave.open(filename, mode='wb') as w:
+		w.setparams([1, 2, 8000, len(pcm_s16), 'NONE', 'not compressed'])
+		for sample in pcm_s16:
+			w.writeframes(struct.pack('<h', sample))

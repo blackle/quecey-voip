@@ -7,6 +7,9 @@ from datetime import datetime
 try:
 	with open("phone_tree.pkl", 'rb') as file:
 		phone_tree = pickle.load(file)
+	for k, v in phone_tree.items():
+		if len(v) == 0:
+			my_dict.pop(k, None)
 except (FileNotFoundError, pickle.UnpicklingError) as e:
 	print("couldn't load saved tree:", e)
 	phone_tree = {"s": loadWAVtoPCM("assets/phone_tree_trailhead.wav")}
@@ -65,6 +68,14 @@ async def handler(call):
 					await asyncio.sleep(0.25)
 					controller.stop()
 					pcm = normalizePCM(await record)
+					if len(pcm) == 0:
+						await call.playTone(900,.1)
+						await asyncio.sleep(0.1)
+						await call.playTone(900,.1)
+						await asyncio.sleep(0.1)
+						await call.playTone(900,.1)
+						await asyncio.sleep(0.5)
+						continue
 					await call.playTone(1333,.25)
 					await call.playPCM(pcm)
 					playback = call.playPCM(author_finalize)

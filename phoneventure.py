@@ -9,7 +9,7 @@ try:
 		phone_tree = pickle.load(file)
 	for k, v in phone_tree.items():
 		if len(v) == 0:
-			my_dict.pop(k, None)
+			phone_tree.pop(k, None)
 except (FileNotFoundError, pickle.UnpicklingError) as e:
 	print("couldn't load saved tree:", e)
 	phone_tree = {"s": loadWAVtoPCM("assets/phone_tree_trailhead.wav")}

@@ -7,9 +7,12 @@ from datetime import datetime
 try:
 	with open("phone_tree.pkl", 'rb') as file:
 		phone_tree = pickle.load(file)
+	keys_to_remove = []
 	for k, v in phone_tree.items():
 		if len(v) == 0:
-			phone_tree.pop(k, None)
+			keys_to_remove.append(k)
+	for k in keys_to_remove:
+		phone_tree.pop(k, None)
 except (FileNotFoundError, pickle.UnpicklingError) as e:
 	print("couldn't load saved tree:", e)
 	phone_tree = {"s": loadWAVtoPCM("assets/phone_tree_trailhead.wav")}

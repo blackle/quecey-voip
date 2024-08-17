@@ -15,6 +15,7 @@ EXPERIMENTS = {
 	"0000": test.handler,
 	"6962": dialasong.handler,
 	"4264": hangman.handler,
+	"1111": makeafish.handler,
 	"7535": memo.handler,
 }
 

@@ -20,6 +20,7 @@ class Song:
 
 songs = [
 	Song('Never Gonna Give You Up', 'Rick Astley', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
+	Song('Never Gonna Give You Up', 'Rick Astley', 'https://www.youtube.com/watch?v=BeyEGebJ1l4'),
 	Song('Istanbul (Not Constantinople)', 'They Might Be Giants', 'https://www.youtube.com/watch?v=p6NzVd3pGdE'),
 	Song('Don\'t Forget', 'Laura Shigihara', 'https://www.youtube.com/watch?v=PEPbUhHhECU'),
 	Song('All Star', 'Smash Mouth', 'https://www.youtube.com/watch?v=-_RBJvfoszk'),

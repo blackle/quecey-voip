@@ -23,12 +23,13 @@ make
 sudo make install
 ```
 
-Pjsip python SWIG bindings
+Pjsip python SWIG bindings. If using a venv, replace the --prefix with the path to the venv.
 ```sh
 # in pjproject
 cd pjsip-apps/src/swig/python
 make
-make install
+# don't use --prefix if installing globally
+python3 setup.py install --prefix=/home/blackle/quecey-voip/venv
 ```
 
 Check that the install worked:
